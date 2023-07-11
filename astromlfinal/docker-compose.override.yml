@@ -1,0 +1,81 @@
+version: '3.1'
+services:
+  minio:
+    image: quay.io/minio/minio
+    networks:
+      - airflow
+    command: server /data --console-address ":9001"
+    ports:
+      - 9000:9000
+      - 9001:9001
+    volumes:
+       - ${PWD}/include/minio:/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  
+    restart: always
+    env_file: .env
+  scheduler:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  
+  webserver:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+  triggerer:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+  postgres:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"                
+  mlflow:
+    image: ghcr.io/mlflow/mlflow
+    networks:
+      - airflow
+    command: bash -c '(pip install -q boto3) && (mlflow server --host 0.0.0.0 --backend-store-uri sqlite:////data/mlflow_backend.db --default-artifact-root s3://mlflow-data)'
+    volumes:
+      - ${PWD}/include/mlflow:/data
+    ports:
+      - 5000:5000
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: always
+    env_file: .env
+  # feast:
+  #     image: feastdev/feature-server
+  #     networks:
+  #       - airflow
+  #     ports:
+  #       - 6566:6566
+  #       - 6567:6567
+  #     working_dir: /feature_store/feature_repo
+  #     command: bash -c '(pip install -q pyspark) && (feast serve -p 6566 -h 0.0.0.0 &) && (feast ui -p 6567 -h 0.0.0.0)'
+  #     extra_hosts:
+  #       - "host.docker.internal:host-gateway"
+  #     restart: "no"
+  #     volumes:
+  #      - ${PWD}/include/feast:/feature_store
+  #     env_file: .env
+  # local_db:
+  #   image: postgres
+  #   networks:
+  #     - airflow    
+  #   restart: always
+  #   environment:
+  #     POSTGRES_PASSWORD: postgres
+  #     POSTGRES_USER: postgres
+  #     PGPORT: 5433
+  #   ports:
+  #     - 5433:5433
+  #   extra_hosts:
+  #     - "host.docker.internal:host-gateway"   
+  # pgadmin:
+  #   image: dpage/pgadmin4
+  #   networks:
+  #     - airflow
+  #   ports:
+  #     - 5050:80
+  #   extra_hosts:
+  #     - "host.docker.internal:host-gateway"
+  #   restart: always
+  #   env_file: .env
+  #   volumes:
+  #     - ${PWD}/include/pgadmin_servers.json:/pgadmin4/servers.json

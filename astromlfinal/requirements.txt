@@ -1,0 +1,3 @@
+scikit-learn 
+mlflow-skinny
+s3fs
