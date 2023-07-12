@@ -1,30 +1,27 @@
 Overview
 ========
 
-This Astro project is a "Hello World" example of a very simple machine learning workflow using Astro SDK.  It is intended to show the basic functionality and to demonstrate how a Data Scientist with basic python skills would be able to more simply build a DAG wihtout all the boilerplate code involved in many MLops pipelines.  
+This Astro project is an example of creating a simple ML pipeline with two DAGs in a producer/consumer relationship. One DAG extracts and loads housing data into a local S3FileSystem. A dataset is defined on the load task, and the updating of that dataset triggers a second consumer DAG. The second DAG then takes that data and uses it to train and run a predictive model. This set up has two main advantages. One is that two teams can work independently on their specific sections of the pipeline without needing to coordinate with each other outside of the initial set up. The second is that because the consumer DAG will only trigger once the data arrives, you can avoid the situation where the producer DAG takes longer than expected to complete and leads to the consumer DAG running on incomplete data.
   
-This project can also be used to highlight some areas where Astronomer might start looking at further reducing boilerplate code for integrations with open-source ML tools (ie. MLFlow, Feast, etc.).  
+This project can also be used to highlight some areas where Astronomer might start looking at further reducing boilerplate code for integrations with open-source ML tools (ie. MLFlow, Feast, etc.)
   
 Project Contents
 ================
 
-- include: This folder contains Jupyter Notebooks which would conceivably be the starting point for development.  In this workflow the user (Data Scientist) would start with exploratory analysis and experimentation in a notebook and then to build an enterprise-grade pipeline.  While some MLOps pipelines will treat the notebook itself as scheduled object for automation this approach has many limitations and introduces new challenges for maintainability, auditability and reproducibility.  
   
 - dags:  
-    - astro_ml: This DAG shows a very simple pipeline with Astro SDK where ML models are saved to object storage.  
-    - astro_mlflow: This DAG shows the same workflow but using MLflow to track experiments and register models.  
+    - astro_ml_producer: This DAG shows a simple producer pipeline that creates a clean feature engineer dataset for the astro_ml_consumer DAG to use for its model training and predictions.  
+    - astro_ml_consumer: This DAG uses the dataset produced by the astro_ml_producer DAG to train a Scikit RidgeCV regression model, and then make predictions using that model. 
   
-- Dockerfile: Environment variables for local development mode are stored in .env since they will be referenced by other docker containers (ie. minio and mlflow).   When deploying to Astro cloud the environment variables in the Dockerfile should be updated to reference cloud storage and mlflow services running externally.  
+- Dockerfile: Environment variables for local development mode are stored in .env since they will be referenced by other docker containers (ie. minio).   When deploying to Astro cloud the environment variables in the Dockerfile should be updated to reference cloud storage.  
   
 - Additional services:  
-    - mlflow: Many MLops platforms include a model catelog/registry for tracking models and experiments. This project includes an additional container for MLflow in local dev mode.  When deployed to Astro cloud this service would need to be provided by an external MLflow instance.  
     - minio: To accomodate local development without relying on cloud storage this project includes a Minio instance for object storage in dev mode.  
 
 
 Deploy Your Project Locally
 ===========================
 
-1. (optional) If planning to run the notebooks to simulate experimentation it is recommended to create a virtual environment and install packages locally (example: `conda env create -n astro_ml -f requirements.txt`)
 2. 'astro dev init'  
 3. 'astro dev start'  
 
